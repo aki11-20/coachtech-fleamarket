@@ -34,6 +34,8 @@
 - Nginx 1.21.1
 
 ## ER図
+![ER図](index.png)
+
 
 ## URL
 
