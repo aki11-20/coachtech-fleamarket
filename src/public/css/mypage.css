@@ -1,0 +1,307 @@
+.mypage__header {
+    max-width: 1400px;
+    margin: 24px auto 12px;
+    padding: 0 50px;
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    align-items: center;
+    gap: 24px;
+}
+
+.mypage__icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+}
+
+.icon-ph {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.mypage__name {
+    font-size: 28px;
+    font-weight: 800;
+    color: #000;
+}
+
+.btn-outline {
+    display: inline-block;
+    border: 1px solid #ff5555;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.tabs {
+    margin: 16px 0 0;
+    border-bottom: 2px solid #cfcfcf;
+}
+
+.tabs__inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 50px 8px;
+    display: flex;
+    gap: 32px;
+}
+
+.tabs__link {
+    display: inline-block;
+    padding: 12px 0;
+    color: #777;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.tabs__link.is-active {
+    color: #e53935;
+    border-bottom: 2px solid #e53935;
+}
+
+.item-grid {
+    max-width: 1500px;
+    margin: 20px auto 60px;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 46px 48px;
+}
+
+.item-card {
+    text-decoration: none;
+    color: inherit;
+}
+
+.item-card__thumb {
+    background: #e5e7eb;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1/1;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+
+.item-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.item-card__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #666;
+    font-size: 20px;
+}
+
+.item-card__title {
+    margin-top: 8px;
+    font-size: 20px;
+    color: #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-card__badge {
+    position: absolute;
+    top: 10px;
+    left: -30px;
+    background: #e53935;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 40px;
+    transform: rotate(-45deg);
+    text-transform: uppercase;
+    z-index: 2;
+    box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    pointer-events: none;
+}
+
+@media (min-width: 1400px) and (max-width: 1540px) {
+    .mypage__header {
+        max-width: 1400px;
+        margin: 24px auto 12px;
+        padding: 0 40px;
+        grid-template-columns: 110px 1fr auto;
+        gap: 20px;
+    }
+
+    .mypage__icon {
+        width: 110px;
+        height: 110px;
+    }
+
+    .mypage__name {
+        font-size: 26px;
+    }
+
+    .tabs__inner {
+        max-width: 1400px;
+        padding: 0 40px 8px;
+        gap: 24px;
+    }
+
+    .item-grid {
+        max-width: 1500px;
+        margin: 20px auto 56px;
+        padding: 0 40px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 32px 32px;
+    }
+
+    .item-card__title {
+        font-size: 18px;
+    }
+
+    .item-card__badge {
+        top: 8px;
+        left: -26px;
+        font-size: 11px;
+        padding: 3px 34px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 850px) {
+    .mypage__header {
+        max-width: 100%;
+        margin: 16px auto 8px;
+        padding: 0 16px;
+        grid-template-columns: 100px 1fr auto;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .mypage__icon {
+        width: 100px;
+        height: 100px;
+    }
+
+    .mypage__name {
+        font-size: 24px;
+    }
+
+    .btn-outline {
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .tabs {
+        margin: 12px 0 0;
+    }
+
+    .tabs__inner {
+        max-width: 100%;
+        padding: 0 16px 6px;
+        gap: 16px;
+    }
+
+    .tabs__link {
+        padding: 10px 0;
+        font-size: 15px;
+    }
+
+    .item-grid {
+        max-width: 100%;
+        margin: 16px auto 40px;
+        padding: 0 16px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px 20px;
+    }
+
+    .item-card__thumb {
+        border-radius: 6px;
+    }
+
+    .item-card__title {
+        font-size: 16px;
+    }
+
+    .item-card__badge {
+        top: 8px;
+        left: -24px;
+        font-size: 11px;
+        padding: 3px 30px;
+    }
+}
+@media (max-width: 767px) {
+    .mypage__header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 100%;
+        margin: 20px auto 16px;
+        padding: 0 12px;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .mypage__icon {
+        width: 90px;
+        height: 90px;
+    }
+
+    .mypage__name {
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .btn-outline {
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .tabs {
+        margin: 12px 0 0;
+        border-bottom: 2px solid #cfcfcf;
+        padding: 0 12px;
+    }
+
+    .tabs__inner {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        font-size: 14px;
+        padding-bottom: 6px;
+    }
+
+    .tabs__link {
+        padding: 8px 0;
+    }
+
+    .item-grid {
+        margin: 16px auto 32px;
+        padding: 0 12px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .item-card__thumb {
+        border-radius: 6px;
+        box-shadow: none;
+    }
+
+    .item-card__title {
+        font-size: 14px;
+    }
+
+    .item-card__badge {
+        top: 6px;
+        left: -20px;
+        font-size: 10px;
+        padding: 2px 26px;
+    }
+}

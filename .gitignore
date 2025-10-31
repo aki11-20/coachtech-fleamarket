@@ -1,0 +1,10 @@
+.env
+.env.testing
+.env
+.env.testing
+src/.env.testing
+.env
+.env.testing
+src/.env.testing
+
+/docker/mysql/data/

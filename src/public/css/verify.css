@@ -1,0 +1,116 @@
+.verify-form {
+    max-width: 760px;
+    margin: 120px auto;
+    padding: 0 16px;
+    text-align: center;
+}
+
+.verify-massage {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.8;
+    margin: 0 0 28px;
+    color: #000;
+}
+
+.verify-btn {
+    display: inline-block;
+    min-width: 280px;
+    background: #d9d9d9;
+    color: #000;
+    border: 1px solid #999;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 0 rgba(0,0,0,.12);
+    transition: 0.2s;
+}
+
+.verify-form form {
+    margin-top: 18px;
+}
+
+.verify-link {
+    appearance: none;
+    background: none;
+    border: none;
+    color: #7ab4e4;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+@media (min-width: 1400px) and (max-width: 1540px) {
+    .verify-form {
+        max-width: 900px;
+        margin: 140px auto;
+        padding: 0 40px;
+    }
+
+    .verify-message {
+        font-size: 22px;
+        margin-bottom: 32px;
+    }
+
+    .verify-btn {
+        min-width: 320px;
+        font-size: 19px;
+        padding: 14px 28px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 850px) {
+    .verify-form {
+        max-width: 640px;
+        margin: 100px auto;
+        padding: 0 20px;
+    }
+
+    .verify-message {
+        font-size: 18px;
+        line-height: 1.7;
+        margin-bottom: 24px;
+    }
+
+    .verify-btn {
+        min-width: 240px;
+        font-size: 17px;
+        padding: 10px 22px;
+    }
+
+    .verify-link {
+        font-size: 13px;
+    }
+}
+
+@media (max-width:767px) {
+    .verify-form {
+        max-width: 100%;
+        margin: 80px auto;
+        padding: 0 12px;
+    }
+
+    .verify-message {
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    .verify-btn {
+        width: 100%;
+        min-width: auto;
+        font-size: 15px;
+        padding: 10px 0;
+        border-radius: 8ps;
+    }
+
+    .verify-link {
+        display: inline-block;
+        margin-top: 12px;
+        font-size: 13px;
+    }
+}
