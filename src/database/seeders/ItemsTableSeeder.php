@@ -30,6 +30,25 @@ class ItemsTableSeeder extends Seeder
             $owner->markEmailAsVerified();
         }
 
+        $buyer = User::updateOrCreate(
+            ['email' => 'buyer@example.com'],
+            [
+                'name' => '購入テストユーザー',
+                'password' => Hash::make('password123'),
+            ]
+        );
+
+        if (!$buyer->hasVerifiedEmail()) {
+            $buyer->markEmailAsVerified();
+        }
+
+        $buyer->profile()->updateOrCreate([], [
+            'nickname' => '購入テストユーザー',
+            'postal_code' => '123-4567',
+            'address' => '東京都新宿区西新宿1-1-1',
+            'building' => 'テストビル101',
+        ]);
+
         $items = [
             [
                 'product_name' => '腕時計',
