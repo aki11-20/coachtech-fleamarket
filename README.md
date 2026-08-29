@@ -263,14 +263,25 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 - phpMyAdmin: http://localhost:8080
 - MailHog: http://localhost:8025
 
-## 出品者用デモアカウント
+## デモアカウント
 
-以下はローカル環境でSeederにより作成される出品者用アカウントです。
+以下のアカウントは、ローカル環境でSeederにより作成されます。
+
+### 出品者用デモアカウント
 
 ```text
 メールアドレス: test@example.com
 パスワード: password123
 ```
+
+### 購入確認用デモアカウント
+
+```text
+メールアドレス: buyer@example.com
+パスワード: password123
+```
+
+購入確認用デモアカウントでは、Seederで作成された商品を購入できます。
 
 ## PHPUnit
 
