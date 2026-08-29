@@ -18,10 +18,10 @@
     <ul class="header-nav-list">
         @guest
         <li class="header-nav-item">
-            <a href="{{ route('login') }}">ログイン</a>
+            <a class="header-link" href="{{ route('login') }}">ログイン</a>
         </li>
         <li class="header-nav-item">
-            <a href="{{ route('mypage') }}">マイページ</a>
+            <a class="header-link" href="{{ route('mypage') }}">マイページ</a>
         </li>
         <li class="header-nav-item">
             <a class="header-btn" href="{{ route('items.create') }}">出品</a>
@@ -38,13 +38,12 @@
             </form>
         </li>
         <li class="header-nav-item">
-            <a href="{{ route('mypage') }}">マイページ</a>
+            <a class="header-link" href="{{ route('mypage') }}">マイページ</a>
         </li>
         <li class="header-nav-item">
             <a class="header-btn" href="{{ route('items.create') }}">出品</a>
         </li>
         @endauth
-
     </ul>
 </nav>
 @endsection
@@ -59,7 +58,7 @@
 
 <section class="item-grid">
     @forelse($items as $item)
-        <a class="item-card" href="{{ route('items.show', $item->id) }}">
+    <a class="item-card" href="{{ route('items.show', $item->id) }}">
         <div class="item-card__thumb">
             @if($item->image)
             <img src="{{ asset($item->image) }}" alt="{{ $item->product_name }}">
@@ -67,23 +66,25 @@
             <span class="item-card__placeholder">商品画像</span>
             @endif
 
-            @if($item->order)
+            @if($item->order && $item->order->isPaid())
             <span class="item-card__badge">Sold</span>
+            @elseif($item->order && $item->order->isPending())
+            <span class="item-card__badge">取引中</span>
             @endif
         </div>
 
         <div class="item-card__title">
             {{ $item->product_name }}
         </div>
-        </a>
-        @empty
-        <p style="max-width:1200px;margin:24px auto;padding:0 8px;">
-            @if($tab === 'mylist')
-            まだマイリストは空です。
-            @else
-            商品がありません。
-            @endif
-        </p>
-        @endforelse
+    </a>
+    @empty
+    <p style="max-width:1200px;margin:24px auto;padding:0 8px;">
+        @if($tab === 'mylist')
+        まだマイリストは空です。
+        @else
+        商品がありません。
+        @endif
+    </p>
+    @endforelse
 </section>
 @endsection

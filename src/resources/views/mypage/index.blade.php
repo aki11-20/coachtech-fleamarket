@@ -58,8 +58,10 @@
                 @else
                 <span class="item-card__placeholder">商品画像</span>
                 @endif
-                @if($item->order)
+                @if($item->order && $item->order->isPaid())
                 <span class="item-card__badge">Sold</span>
+                @elseif($item->order && $item->order->isPending())
+                <span class="item-card__badge">取引中</span>
                 @endif
             </div>
             <div class="item-card__title">{{ $item->product_name }}</div>
@@ -78,7 +80,11 @@
                 @else
                 <span class="item-card__placeholder">商品画像</span>
                 @endif
-                <span class="item-card__badge">Sold</span>
+                @if($item->pivot->status === \App\Models\Order::STATUS_PAID)
+                <span class="item-card__badge">購入済み</span>
+                @elseif($item->pivot->status === \App\Models\Order::STATUS_PENDING)
+                <span class="item-card__badge">決済待ち</span>
+                @endif
             </div>
             <div class="item-card__title">{{ $item->product_name }}</div>
         </a>

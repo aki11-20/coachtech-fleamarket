@@ -14,7 +14,7 @@ class LikeController extends Controller
         $userId = $request->user()->id;
 
         if ($item->user_id === $userId) {
-            return redirect()->route('items,show', $item_id)
+            return redirect()->route('items.show', $item_id)
             ->withErrors(['like' => '自分の出品にはいいねできません']);
         }
 

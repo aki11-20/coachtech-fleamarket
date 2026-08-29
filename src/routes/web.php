@@ -7,8 +7,6 @@ use App\Http\Controllers\MypageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\StripeController;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\RegisteredUserController;
 
@@ -43,9 +41,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/purchase/address/{item_id}', [PurchaseController::class, 'updateAddress'])->name('purchase.address.update');
     Route::post('/purchase/{item_id}/payment', [PurchaseController::class, 'updatePayment'])->name('purchase.payment.update');
 
-    Route::post('/payments/checkout/{order}', [StripeController::class, 'checkout'])->name('payments.checkout');
-    Route::get('/payments/success', [StripeController::class, 'success'])->name('payments.success');
-    Route::get('/payments/cancel', [StripeController::class, 'cancel'])->name('payments.cancel');
+    Route::get('/payments/success', [PurchaseController::class, 'success'])->name('payments.success');
+    Route::get('/payments/cancel', [PurchaseController::class, 'cancel'])->name('payments.cancel');
 
     Route::get('/mypage', [MypageController::class, 'index'])->name('mypage');
 

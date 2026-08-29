@@ -102,6 +102,8 @@ class MyListTest extends TestCase
             'user_id' => $user->id,
             'item_id' => $likedSold->id,
             'payment_type' => 'card',
+            'status' => Order::STATUS_PAID,
+            'paid_at' => now(),
             'postal_code' => '123-4567',
             'address' => '京都',
             'building' => '',
