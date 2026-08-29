@@ -35,6 +35,6 @@ class Item extends Model
         return $this->belongsToMany(Category::class, 'category_item','item_id', 'category_id')->withTimestamps();
     }
     public function order() {
-        return $this->hasOne(Order::class, 'item_id');
+        return $this->hasOne(Order::class, 'item_id')->active();
     }
 }

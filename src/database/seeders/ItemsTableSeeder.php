@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Category;
 use App\Models\Item;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -25,12 +26,9 @@ class ItemsTableSeeder extends Seeder
             ]
             );
 
-            $conditionMap = [
-                '良好' => 'new',
-                '目立った傷や汚れなし' => 'used',
-                'やや傷や汚れあり' => 'used',
-                '状態が悪い' => 'used',
-            ];
+        if (!$owner->hasVerifiedEmail()) {
+            $owner->markEmailAsVerified();
+        }
 
         $items = [
             [
@@ -39,7 +37,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => 'スタイリッシュなデザインのメンズ腕時計',
                 'price' => 15000,
                 'condition' => '良好',
-                'image' => '/storage/items/watch.jpg'
+                'image' => 'images/items/watch.jpg',
+                'categories' => ['メンズ', 'アクセサリー'],
             ],
             [
                 'product_name' => 'HDD',
@@ -47,7 +46,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => '高速で信頼性の高いハードディスク',
                 'price' => 5000,
                 'condition' => '目立った傷や汚れなし',
-                'image' => '/storage/items/hdd.jpg'
+                'image' => 'images/items/hdd.jpg',
+                'categories' => ['家電'],
             ],
             [
                 'product_name' => '玉ねぎ3束',
@@ -55,7 +55,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => '新鮮な玉ねぎ3束のセット',
                 'price' => 300,
                 'condition' => 'やや傷や汚れあり',
-                'image' => '/storage/items/onion.jpg'
+                'image' => 'images/items/onion.jpg',
+                'categories' => ['キッチン'],
             ],
             [
                 'product_name' => '革靴',
@@ -63,7 +64,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => 'クラシックなデザインの革靴',
                 'price' => 4000,
                 'condition' => '状態が悪い',
-                'image' => '/storage/items/shoes.jpg'
+                'image' => 'images/items/shoes.jpg',
+                'categories' => ['ファッション', 'メンズ'],
             ],
             [
                 'product_name' => 'ノートPC',
@@ -71,7 +73,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => '高性能なノートパソコン',
                 'price' => 45000,
                 'condition' => '良好',
-                'image' => '/storage/items/laptop.jpg'
+                'image' => 'images/items/laptop.jpg',
+                'categories' => ['家電'],
             ],
             [
                 'product_name' => 'マイク',
@@ -79,7 +82,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => '高音質のレコーディング用マイク',
                 'price' => 8000,
                 'condition' => '目立った傷や汚れなし',
-                'image' => '/storage/items/mic.jpg'
+                'image' => 'images/items/mic.jpg',
+                'categories' => ['家電'],
             ],
             [
                 'product_name' => 'ショルダーバック',
@@ -87,7 +91,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => 'おしゃれなショルダーバック',
                 'price' => 3500,
                 'condition' => 'やや傷や汚れあり',
-                'image' => '/storage/items/bag.jpg'
+                'image' => 'images/items/bag.jpg',
+                'categories' => ['ファッション', 'レディース'],
             ],
             [
                 'product_name' => 'タンブラー',
@@ -95,7 +100,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => '使いやすいタンブラー',
                 'price' => 500,
                 'condition' => '状態が悪い',
-                'image' => '/storage/items/tumbler.jpg'
+                'image' => 'images/items/tumbler.jpg',
+                'categories' => ['キッチン'],
             ],
             [
                 'product_name' => 'コーヒーミル',
@@ -103,7 +109,8 @@ class ItemsTableSeeder extends Seeder
                 'description' => '手動のコーヒーミル',
                 'price' => 4000,
                 'condition' => '良好',
-                'image' => '/storage/items/mill.jpg'
+                'image' => 'images/items/mill.jpg',
+                'categories' => ['キッチン'],
             ],
             [
                 'product_name' => 'メイクセット',
@@ -111,20 +118,30 @@ class ItemsTableSeeder extends Seeder
                 'description' => '便利なメイクアップセット',
                 'price' => 2500,
                 'condition' => '目立った傷や汚れなし',
-                'image' => '/storage/items/makeup.jpg'
+                'image' => 'images/items/makeup.jpg',
+                'categories' => ['コスメ', 'レディース'],
             ],
         ];
 
-        foreach ($items as $item) {
-            Item::create([
+        foreach ($items as $itemData) {
+            $item = Item::updateOrCreate([
                 'user_id' => $owner->id,
-                'product_name' => $item['product_name'],
-                'brand_name' => $item['brand_name'],
-                'description' => $item['description'],
-                'price' => $item['price'],
-                'condition' => $item['condition'],
-                'image' => $item['image'],
+                'product_name' => $itemData['product_name'],
+            ], [
+                'brand_name' => $itemData['brand_name'],
+                'description' => $itemData['description'],
+                'price' => $itemData['price'],
+                'condition' => $itemData['condition'],
+                'image' => $itemData['image'],
             ]);
+
+            $categoryIds = Category::query()
+                ->whereIn('name', $itemData['categories'])
+                ->get()
+                ->unique('name')
+                ->pluck('id');
+
+            $item->categories()->sync($categoryIds);
         }
     }
 }

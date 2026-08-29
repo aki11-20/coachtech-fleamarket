@@ -6,11 +6,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Item;
+use App\Models\Order;
 use Illuminate\Support\Facades\Hash;
+use Tests\Concerns\InteractsWithStripeFakes;
 
 class AddressTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, InteractsWithStripeFakes;
 
     protected function setUp(): void {
         parent::setUp();
@@ -66,11 +68,18 @@ class AddressTest extends TestCase
         ->assertSee('京都市伏見区 テスト101');
     }
 
-    public function test_purchased_order_is_saved_with_the_changed_shipping_address() {
+    public function test_pending_order_is_saved_with_the_changed_shipping_address() {
         $buyer = $this->createVerifiedUser([
             'email' => 'buyer2@example.com',
         ]);
         $item = $this->createItem();
+
+        $this->stripePaymentServiceMock
+            ->shouldReceive('createCheckoutSession')
+            ->once()
+            ->andReturnUsing(function (Order $order) {
+                return $this->makeCheckoutSession($order);
+            });
 
         $this->actingAs($buyer, 'web')
         ->post(route('purchase.address.update', ['item_id' => $item->id]), [
@@ -90,6 +99,7 @@ class AddressTest extends TestCase
             'user_id' => $buyer->id,
             'item_id' => $item->id,
             'payment_type' => 'card',
+            'status' => Order::STATUS_PENDING,
             'postal_code' => '604-8005',
             'address' => '東京都渋谷区',
             'building' => '501',

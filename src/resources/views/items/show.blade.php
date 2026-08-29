@@ -57,8 +57,10 @@
                 <span class="item-card__placeholder">商品画像</span>
                 @endif
 
-                @if($item->order)
-                <span class="badge-sold">Sold</span>
+                @if($item->order && $item->order->isPaid())
+                <span class="badge-sold">売却済み</span>
+                @elseif($item->order && $item->order->isPending())
+                <span class="badge-sold">購入手続き中</span>
                 @endif
             </div>
         </div>
@@ -97,6 +99,10 @@
 
                 @if(!$item->order)
                 <a class="buy-btn" href="{{ route('purchase.show', ['item_id'=>$item->id]) }}">購入手続きへ</a>
+                @elseif($item->order->isPending())
+                <button class="buy-btn" type="button" disabled>購入手続き中</button>
+                @else
+                <button class="buy-btn" type="button" disabled>売却済み</button>
                 @endif
             </div>
 

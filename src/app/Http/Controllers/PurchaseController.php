@@ -5,14 +5,28 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PurchaseRequest;
 use App\Models\Item;
 use App\Models\Order;
+use App\Services\StripePaymentService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\AddressRequest;
-use Stripe\StripeClient;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
+use Throwable;
 
 
 class PurchaseController extends Controller
 {
+    private const CHECKOUT_EXPIRATION_MINUTES = 60;
+
+    private $stripePaymentService;
+
+    public function __construct(StripePaymentService $stripePaymentService)
+    {
+        $this->stripePaymentService = $stripePaymentService;
+    }
+
     public function show ($item_id) {
         $item = Item::with('order')->findOrFail($item_id);
         if($item->user_id === Auth::id()) {
@@ -63,16 +77,8 @@ class PurchaseController extends Controller
     }
 
     public function store (PurchaseRequest $request, $item_id) {
-        $item = Item::with('order')->findOrFail($item_id);
-        if($item->user_id === Auth::id()) {
-            return back()->withErrors(['purchase' => '自分が出品した商品は購入できません']);
-        }
-        if($item->order) {
-            return back()->withErrors(['purchase' => 'この商品はすでに購入されています']);
-        }
-       
-        $paymentType = session('purchase.payment_type.' . $item_id) ?? $request->payment_type;
-        
+        $user = Auth::user();
+        $paymentType = $request->validated()['payment_type'];
         $shipping = session('purchase.address.'.$item_id);
 
         if ($shipping && !empty($shipping['postal_code']) && !empty($shipping['address'])) {
@@ -80,7 +86,7 @@ class PurchaseController extends Controller
             $address = $shipping['address'];
             $building = $shipping['building'] ?? null;
         } else {
-            $profile = Auth::user()->profile;
+            $profile = $user->profile;
             if (!$profile || !$profile->postal_code || !$profile->address) {
                 return redirect()
                 ->route('purchase.address', ['item_id' => $item_id])
@@ -90,42 +96,236 @@ class PurchaseController extends Controller
             $address     = $profile->address;
             $building    = $profile->building;
         }
-        $order = Order::create([
-            'item_id' => $item->id,
-            'user_id' => Auth::id(),
-            'payment_type' => $paymentType,
-            'postal_code' => $postal_code,
-            'address' => $address,
-            'building' => $building,
-        ]);
 
-        session()->forget('purchase.address.'.$item_id);
+        $order = DB::transaction(function () use (
+            $item_id,
+            $user,
+            $paymentType,
+            $postal_code,
+            $address,
+            $building
+        ) {
+            $item = Item::query()->lockForUpdate()->findOrFail($item_id);
 
-        $stripe = new StripeClient(config('services.stripe.secret'));
-        $paymentMethodTypes = $paymentType === 'convenience' ? ['konbini'] : ['card'];
+            if ($item->user_id === $user->id) {
+                throw ValidationException::withMessages([
+                    'purchase' => '自分が出品した商品は購入できません',
+                ]);
+            }
 
-        $session = $stripe->checkout->sessions->create([
-            'mode' => 'payment',
-            'payment_method_types' => $paymentMethodTypes,
-            'line_items' => [[
-                'price_data' => [
-                    'currency' => 'jpy',
-                    'product_data' => ['name' => $item->product_name],
-                    'unit_amount' => (int)$item->price,
-                ],
-                'quantity' => 1,
-            ]],
-            'success_url' => route('payments.success', ['order' => $order->id]) . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('payments.cancel', ['order' => $order->id]),
-            'metadata' => [
-                'order_id' => (string)$order->id,
-                'item_id' => (string)$item->id,
-                'user_id' => (string)Auth::id(),
+            $hasPaidOrder = Order::query()
+                ->where('item_id', $item->id)
+                ->where('status', Order::STATUS_PAID)
+                ->exists();
+
+            if ($hasPaidOrder) {
+                throw ValidationException::withMessages([
+                    'purchase' => 'この商品はすでに購入されています',
+                ]);
+            }
+
+            $hasPendingOrder = Order::query()
+                ->where('item_id', $item->id)
+                ->where('status', Order::STATUS_PENDING)
+                ->exists();
+
+            if ($hasPendingOrder) {
+                throw ValidationException::withMessages([
+                    'purchase' => 'この商品は現在購入手続き中です',
+                ]);
+            }
+
+            return Order::create([
+                'item_id' => $item->id,
+                'user_id' => $user->id,
                 'payment_type' => $paymentType,
-            ],
-        ]);
+                'status' => Order::STATUS_PENDING,
+                'reserved_until' => now()->addMinutes(self::CHECKOUT_EXPIRATION_MINUTES),
+                'postal_code' => $postal_code,
+                'address' => $address,
+                'building' => $building,
+            ]);
+        });
 
-        return redirect()
-        ->away($session->url, 303);
+        $checkoutSession = null;
+
+        try {
+            $checkoutSession = $this->stripePaymentService->createCheckoutSession($order);
+
+            $order->update([
+                'stripe_checkout_session_id' => $checkoutSession->id,
+                'reserved_until' => Carbon::createFromTimestamp(
+                    (int) $checkoutSession->expires_at,
+                    config('app.timezone')
+                ),
+            ]);
+
+            session()->forget('purchase.address.'.$item_id);
+
+            return redirect()->away($checkoutSession->url, 303);
+        } catch (Throwable $exception) {
+            if ($checkoutSession && $checkoutSession->id) {
+                try {
+                    $this->stripePaymentService->expireCheckoutSession($checkoutSession->id);
+                } catch (Throwable $expireException) {
+                    report($expireException);
+                }
+            }
+
+            Order::query()
+                ->whereKey($order->id)
+                ->where('status', Order::STATUS_PENDING)
+                ->update([
+                    'status' => Order::STATUS_CANCELLED,
+                    'cancelled_at' => now(),
+                    'reserved_until' => null,
+                    'paid_at' => null,
+                ]);
+
+            report($exception);
+
+            return redirect()
+                ->route('purchase.show', ['item_id' => $item_id])
+                ->withErrors(['purchase' => '決済画面を開始できませんでした。もう一度お試しください。']);
+        }
+    }
+
+    public function success(Request $request)
+    {
+        $sessionId = $request->query('session_id');
+
+        if (!is_string($sessionId) || $sessionId === '') {
+            return redirect()
+                ->route('items.index')
+                ->withErrors(['purchase' => '決済情報を確認できませんでした。']);
+        }
+
+        try {
+            $checkoutSession = $this->stripePaymentService->retrieveCheckoutSession($sessionId);
+
+            $order = DB::transaction(function () use ($checkoutSession) {
+                $order = Order::query()
+                    ->with('item')
+                    ->where('stripe_checkout_session_id', $checkoutSession->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$order || $order->user_id !== Auth::id()) {
+                    throw new RuntimeException('The Stripe Session owner could not be verified.');
+                }
+
+                $this->stripePaymentService->assertSessionMatchesOrder($checkoutSession, $order);
+
+                if ($checkoutSession->payment_status === 'paid') {
+                    $order->markAsPaid();
+                }
+
+                return $order;
+            });
+
+            $order = $order->fresh();
+
+            if ($order->isPaid()) {
+                $message = '決済が完了しました。';
+            } elseif ($order->isPending()) {
+                $message = '決済を受け付けました。支払い完了を確認中です。';
+            } else {
+                return redirect()
+                    ->route('items.show', ['item_id' => $order->item_id])
+                    ->withErrors(['purchase' => 'この注文はキャンセルされています。']);
+            }
+
+            return redirect()
+                ->route('items.show', ['item_id' => $order->item_id])
+                ->with('status', $message);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return redirect()
+                ->route('items.index')
+                ->withErrors(['purchase' => '決済状態を確認できませんでした。']);
+        }
+    }
+
+    public function cancel(Request $request)
+    {
+        $orderId = $request->query('order');
+
+        if (!is_numeric($orderId)) {
+            return redirect()
+                ->route('items.index')
+                ->withErrors(['purchase' => 'キャンセル対象の注文を確認できませんでした。']);
+        }
+
+        $order = Order::query()
+            ->with('item')
+            ->whereKey((int) $orderId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$order || !$order->stripe_checkout_session_id) {
+            return redirect()
+                ->route('items.index')
+                ->withErrors(['purchase' => 'キャンセル対象の注文を確認できませんでした。']);
+        }
+
+        if ($order->isPaid()) {
+            return redirect()
+                ->route('items.show', ['item_id' => $order->item_id])
+                ->withErrors(['purchase' => '支払い済みの注文はキャンセルできません。']);
+        }
+
+        try {
+            $checkoutSession = $this->stripePaymentService
+                ->retrieveCheckoutSession($order->stripe_checkout_session_id);
+
+            $this->stripePaymentService->assertSessionMatchesOrder($checkoutSession, $order);
+
+            if ($checkoutSession->status === 'open') {
+                $checkoutSession = $this->stripePaymentService
+                    ->expireCheckoutSession($checkoutSession->id);
+            }
+
+            if ($checkoutSession->status === 'expired') {
+                $orderStatus = DB::transaction(function () use ($order, $checkoutSession) {
+                    $lockedOrder = Order::query()
+                        ->with('item')
+                        ->whereKey($order->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if ($lockedOrder->user_id !== Auth::id()) {
+                        throw new RuntimeException('The order owner could not be verified.');
+                    }
+
+                    $this->stripePaymentService
+                        ->assertSessionMatchesOrder($checkoutSession, $lockedOrder);
+
+                    $lockedOrder->markAsCancelled();
+
+                    return $lockedOrder->fresh()->status;
+                });
+
+                if ($orderStatus === Order::STATUS_PAID) {
+                    return redirect()
+                        ->route('items.show', ['item_id' => $order->item_id])
+                        ->withErrors(['purchase' => '支払い済みの注文はキャンセルできません。']);
+                }
+
+                return redirect()
+                    ->route('items.show', ['item_id' => $order->item_id])
+                    ->with('status', '決済をキャンセルしました。');
+            }
+
+            return redirect()
+                ->route('items.show', ['item_id' => $order->item_id])
+                ->withErrors(['purchase' => '決済はキャンセルされていません。']);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return redirect()
+                ->route('items.show', ['item_id' => $order->item_id])
+                ->withErrors(['purchase' => '決済のキャンセルを確認できませんでした。']);
+        }
     }
 }

@@ -65,7 +65,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function purchasedItems() {
         return $this->belongsToMany(Item::class, 'orders', 'user_id', 'item_id')
+        ->wherePivotIn('status', [Order::STATUS_PENDING, Order::STATUS_PAID])
         ->withTimestamps()
-        ->withPivot(['payment_type', 'postal_code', 'address', 'building']);
+        ->withPivot([
+            'payment_type',
+            'status',
+            'postal_code',
+            'address',
+            'building',
+        ]);
     }
 }
